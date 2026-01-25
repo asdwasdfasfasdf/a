@@ -612,9 +612,19 @@
         const validUsername = 'zuoming';
         const validPassword = '123123';
 
+        // SHA1加密函数
+        async function sha1Hash(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
         // 数据库操作
         const dbName = 'QuizSystemDB';
-        const dbVersion = 1;
+        const dbVersion = 2;
         let db;
         let isWrongQuestionQuiz = false; // 标记是否是错题重答模式
 
@@ -649,6 +659,11 @@
                     // 创建答题记录存储
                     if (!db.objectStoreNames.contains('quizRecords')) {
                         db.createObjectStore('quizRecords', { keyPath: 'id', autoIncrement: true });
+                    }
+                    
+                    // 创建用户凭证存储
+                    if (!db.objectStoreNames.contains('userCredentials')) {
+                        db.createObjectStore('userCredentials', { keyPath: 'id', autoIncrement: true });
                     }
                 };
 
@@ -960,6 +975,71 @@
                     });
                 })
             ]);
+        }
+
+        // 用户凭证管理
+        // 保存用户凭证到数据库
+        function saveUserCredentials(username, passwordHash) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction('userCredentials', 'readwrite');
+                const store = transaction.objectStore('userCredentials');
+                
+                // 先清空现有凭证
+                const clearRequest = store.clear();
+                
+                clearRequest.onsuccess = function() {
+                    // 保存新凭证
+                    const addRequest = store.add({
+                        username,
+                        passwordHash,
+                        createdAt: new Date().toISOString()
+                    });
+                    
+                    addRequest.onsuccess = function(event) {
+                        resolve(event.target.result);
+                    };
+                    
+                    addRequest.onerror = function(event) {
+                        console.error('保存用户凭证失败:', event.target.error);
+                        reject(event.target.error);
+                    };
+                };
+                
+                clearRequest.onerror = function(event) {
+                    console.error('清空用户凭证失败:', event.target.error);
+                    reject(event.target.error);
+                };
+                
+                transaction.onerror = function(event) {
+                    console.error('事务错误:', event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // 获取用户凭证
+        function getUserCredentials() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction('userCredentials', 'readonly');
+                const store = transaction.objectStore('userCredentials');
+                
+                const getAllRequest = store.getAll();
+                
+                getAllRequest.onsuccess = function(event) {
+                    const credentials = event.target.result;
+                    resolve(credentials.length > 0 ? credentials[0] : null);
+                };
+                
+                getAllRequest.onerror = function(event) {
+                    console.error('获取用户凭证失败:', event.target.error);
+                    reject(event.target.error);
+                };
+                
+                transaction.onerror = function(event) {
+                    console.error('事务错误:', event.target.error);
+                    reject(event.target.error);
+                };
+            });
         }
 
         // 错题管理
@@ -2694,23 +2774,77 @@
             const loginPage = document.getElementById('login-page');
             const appContainer = document.getElementById('app-container');
 
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                
-                // 验证用户名和密码
-                if (username === validUsername && password === validPassword) {
+            // 先尝试初始化数据库并检查是否存在用户凭证
+            initDB().then(() => {
+                return getUserCredentials();
+            }).then(credentials => {
+                if (credentials && credentials.passwordHash) {
+                    // 存在凭证，直接登录
                     isLoggedIn = true;
                     loginPage.classList.add('hidden');
                     appContainer.classList.remove('hidden');
-                    // 初始化应用
                     initApp();
                 } else {
-                    loginError.textContent = '用户名或密码错误，请重试';
-                    loginError.classList.remove('hidden');
+                    // 不存在凭证，显示登录页面
+                    loginPage.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                    
+                    // 绑定登录表单提交事件
+                    loginForm.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        
+                        const username = document.getElementById('username').value;
+                        const password = document.getElementById('password').value;
+                        
+                        // 验证用户名和密码
+                        if (username === validUsername && password === validPassword) {
+                            try {
+                                // 生成密码的SHA1哈希
+                                const passwordHash = await sha1Hash(password);
+                                
+                                // 保存凭证到数据库
+                                await saveUserCredentials(username, passwordHash);
+                                
+                                isLoggedIn = true;
+                                loginPage.classList.add('hidden');
+                                appContainer.classList.remove('hidden');
+                                // 初始化应用
+                                initApp();
+                            } catch (error) {
+                                console.error('保存登录凭证失败:', error);
+                                alert('登录失败，请重试');
+                            }
+                        } else {
+                            loginError.textContent = '用户名或密码错误，请重试';
+                            loginError.classList.remove('hidden');
+                        }
+                    });
                 }
+            }).catch(error => {
+                console.error('初始化登录失败:', error);
+                // 数据库初始化失败，显示登录页面
+                loginPage.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+                
+                // 绑定登录表单提交事件
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    // 验证用户名和密码
+                    if (username === validUsername && password === validPassword) {
+                        isLoggedIn = true;
+                        loginPage.classList.add('hidden');
+                        appContainer.classList.remove('hidden');
+                        // 初始化应用
+                        initApp();
+                    } else {
+                        loginError.textContent = '用户名或密码错误，请重试';
+                        loginError.classList.remove('hidden');
+                    }
+                });
             });
         }
 
@@ -2720,21 +2854,16 @@
                 return;
             }
             
-            initDB().then(() => {
-                initNavigation();
-                initQuestionModal();
-                initCategoryModals();
-                initQuiz功能();
-                initDataManagement();
-                initWrongQuestions功能();
-                initQuestionFilter();
-                initQuestionActions(); // 初始化题目操作的事件委托
-                populateCategorySelectors();
-                updateHomeStats();
-            }).catch(error => {
-                console.error('初始化应用失败:', error);
-                alert('应用初始化失败，请刷新页面重试');
-            });
+            initNavigation();
+            initQuestionModal();
+            initCategoryModals();
+            initQuiz功能();
+            initDataManagement();
+            initWrongQuestions功能();
+            initQuestionFilter();
+            initQuestionActions(); // 初始化题目操作的事件委托
+            populateCategorySelectors();
+            updateHomeStats();
         }
 
         // 页面加载完成后初始化登录功能
