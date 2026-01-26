@@ -41,23 +41,25 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 min-h-screen">
     <!-- 登录页面 -->
-    <div id="login-page" class="min-h-screen flex items-center justify-center bg-gray-100">
-        <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-            <h1 class="text-2xl font-bold text-center text-primary mb-6">本地答题系统</h1>
-            <h2 class="text-xl font-semibold text-center mb-8">用户登录</h2>
+    <div id="login-page" class="fixed inset-0 bg-gray-100 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-primary mb-2">本地答题系统</h2>
+                <p class="text-gray-600">请登录后进入系统</p>
+            </div>
             
             <form id="login-form" class="space-y-6">
                 <div>
                     <label for="username" class="block text-gray-700 font-medium mb-2">用户名</label>
-                    <input type="text" id="username" name="username" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+                    <input type="text" id="username" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入用户名" required>
                 </div>
                 
                 <div>
                     <label for="password" class="block text-gray-700 font-medium mb-2">密码</label>
-                    <input type="password" id="password" name="password" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+                    <input type="password" id="password" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="请输入密码" required>
                 </div>
                 
-                <div class="text-center text-red-500 mb-4 hidden" id="login-error"></div>
+                <div id="login-error" class="text-danger text-sm mt-2 hidden"></div>
                 
                 <button type="submit" class="w-full bg-primary text-white py-3 rounded-md hover:bg-blue-700 transition-all-300 font-medium">
                     登录
@@ -398,9 +400,15 @@
                                 <i class="fa fa-upload text-secondary mr-2"></i>导入数据
                             </h3>
                             <p class="text-gray-600 mb-4">从JSON文件导入数据，将覆盖现有数据，请谨慎操作。</p>
-                            <button id="import-data-btn" class="bg-secondary text-white px-6 py-2 rounded-md hover:bg-green-700 transition-all-300">
-                                <i class="fa fa-upload mr-2"></i>选择导入文件
-                            </button>
+                            <div class="flex flex-wrap gap-3">
+                                <button id="import-data-btn" class="bg-secondary text-white px-6 py-2 rounded-md hover:bg-green-700 transition-all-300">
+                                    <i class="fa fa-upload mr-2"></i>选择导入文件
+                                </button>
+                                <button id="quick-import-json-btn" class="bg-accent text-white px-6 py-2 rounded-md hover:bg-purple-700 transition-all-300">
+                                    <i class="fa fa-bolt mr-2"></i>快速导入JSON
+                                </button>
+                                <input type="file" id="quick-import-file-input" accept=".json" class="hidden">
+                            </div>
                         </div>
                         
                         <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all-300">
@@ -421,6 +429,92 @@
                             <button id="clear-all-data-btn" class="bg-danger text-white px-6 py-2 rounded-md hover:bg-red-700 transition-all-300">
                                 <i class="fa fa-trash mr-2"></i>清空所有数据
                             </button>
+                        </div>
+
+                        <!-- 文本导入（问题----答案） -->
+                        <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all-300">
+                            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                                <i class="fa fa-file-text-o text-primary mr-2"></i>文本导入（问题----答案）
+                            </h3>
+                            <p class="text-gray-600 mb-4">每行一题，格式：题目内容----正确答案。系统会自动优先从“错误答案库”中提取4个不同的错误选项，不足时再智能生成。</p>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">一级分类</label>
+                                <select id="text-import-main" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="">-- 请选择一级分类 --</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">二级分类</label>
+                                <select id="text-import-sub" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="">-- 请先选择一级分类 --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">文本内容</label>
+                                <textarea id="text-import-input" rows="8" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="例如：&#10;世界上最高的山是？----珠穆朗玛峰&#10;2+2等于几？----4"></textarea>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500">提示：使用四个半角连字符 ---- 作为分隔符。</div>
+                                <button id="text-import-btn" class="bg-secondary text-white px-6 py-2 rounded-md hover:bg-green-700 transition-all-300">
+                                    <i class="fa fa-upload mr-2"></i>解析并导入
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 错误答案库管理 -->
+                        <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all-300">
+                            <h3 class="text-xl font-semibold mb-2 flex items-center">
+                                <i class="fa fa-database text-accent mr-2"></i>错误答案库
+                            </h3>
+                            <p class="text-gray-600 mb-4">该库用于在导入题目时抽取错误选项。支持按分类管理与导出/导入。</p>
+
+                            <div class="grid md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-gray-700 font-medium mb-2">一级分类（可选）</label>
+                                    <select id="wrong-pool-main" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="">全部/全局</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 font-medium mb-2">二级分类（可选）</label>
+                                    <select id="wrong-pool-sub" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="">全部</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <div class="text-sm text-gray-600">
+                                        当前条目：<span id="wrong-pool-count" class="font-semibold text-accent">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-700 font-medium mb-2">批量导入错误答案（每行一条）</label>
+                                <textarea id="wrong-pool-input" rows="6" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="每行一条，例如：&#10;巴黎&#10;东京&#10;与题意无关"></textarea>
+                                <div class="text-xs text-gray-500 mt-1">导入时将按上方所选分类进行归档；若不选择分类，则作为全局条目。</div>
+                            </div>
+                            <div class="flex flex-wrap gap-3 mb-3">
+                                <button id="wrong-pool-import-btn" class="bg-accent text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-all-300">
+                                    <i class="fa fa-plus mr-2"></i>添加到错误答案库
+                                </button>
+                                <button id="wrong-pool-clear-scope-btn" class="bg-danger text-white px-4 py-2 rounded-md hover:bg-red-700 transition-all-300">
+                                    <i class="fa fa-trash mr-2"></i>清空当前选择范围
+                                </button>
+                                <button id="wrong-pool-clear-all-btn" class="bg-danger text-white px-4 py-2 rounded-md hover:bg-red-700 transition-all-300">
+                                    <i class="fa fa-trash mr-2"></i>清空全部
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap gap-3">
+                                <button id="wrong-pool-export-btn" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-all-300">
+                                    <i class="fa fa-download mr-2"></i>导出当前范围JSON
+                                </button>
+                                <button id="wrong-pool-import-json-btn" class="bg-secondary text-white px-4 py-2 rounded-md hover:bg-green-700 transition-all-300">
+                                    <i class="fa fa-upload mr-2"></i>导入JSON
+                                </button>
+                                <input type="file" id="wrong-pool-import-file" accept=".json" class="hidden">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -606,11 +700,38 @@
         </div>
     </div>
 
+    <!-- 文本导入预览模态框 -->
+    <div id="text-import-preview-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-primary">导入预览与编辑</h3>
+                <button id="close-text-import-preview" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="text-sm text-gray-600 mb-4">可在导入前编辑题目与选项，确保正确答案唯一且与错误答案不同。</div>
+                <div id="text-import-preview-list" class="space-y-4"></div>
+                <div class="flex justify-between items-center mt-6">
+                    <div class="text-xs text-gray-500">提示：正确答案用单选框选择；你也可以修改各个选项文本。</div>
+                    <div>
+                        <button id="text-import-preview-randomize" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-all-300 mr-2">
+                            随机打乱所有题目选项
+                        </button>
+                        <button id="confirm-text-import-btn" class="bg-primary text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all-300">
+                            确认导入
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 状态管理
         let isLoggedIn = false;
         const validUsername = 'zuoming';
-        const validPassword = '1231231';
+        const validPassword = '123123';
 
         // SHA1加密函数
         async function sha1Hash(text) {
@@ -624,7 +745,7 @@
 
         // 数据库操作
         const dbName = 'QuizSystemDB';
-        const dbVersion = 2;
+        const dbVersion = 3;
         let db;
         let isWrongQuestionQuiz = false; // 标记是否是错题重答模式
 
@@ -660,6 +781,11 @@
                     if (!db.objectStoreNames.contains('quizRecords')) {
                         db.createObjectStore('quizRecords', { keyPath: 'id', autoIncrement: true });
                     }
+
+                    // 创建错误答案库存储
+                    if (!db.objectStoreNames.contains('wrongAnswerPool')) {
+                        db.createObjectStore('wrongAnswerPool', { keyPath: 'id', autoIncrement: true });
+                    }
                     
                     // 创建用户凭证存储
                     if (!db.objectStoreNames.contains('userCredentials')) {
@@ -682,28 +808,54 @@
         // 通用数据库操作
         function dbOperation(storeName, mode, operation) {
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(storeName, mode);
-                const store = transaction.objectStore(storeName);
-                
-                const request = operation(store);
-                
-                request.onsuccess = function(event) {
-                    resolve(event.target.result);
-                };
-                
-                request.onerror = function(event) {
-                    console.error('数据库操作错误:', event.target.error);
-                    reject(event.target.error);
-                };
-                
-                transaction.oncomplete = function() {
-                    // 操作完成
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error('事务错误:', event.target.error);
-                    reject(event.target.error);
-                };
+                try {
+                    const transaction = db.transaction(storeName, mode);
+                    const store = transaction.objectStore(storeName);
+                    
+                    let request;
+                    try {
+                        request = operation(store);
+                    } catch (err) {
+                        reject(err);
+                        return;
+                    }
+
+                    let resolved = false;
+
+                    if (request && typeof request.onsuccess !== 'undefined') {
+                        request.onsuccess = function(event) {
+                            if (!resolved) {
+                                resolved = true;
+                                resolve(event.target.result);
+                            }
+                        };
+                        request.onerror = function(event) {
+                            console.error('数据库操作错误:', event.target.error);
+                            if (!resolved) {
+                                resolved = true;
+                                reject(event.target.error);
+                            }
+                        };
+                    }
+                    
+                    transaction.oncomplete = function() {
+                        // 如果操作未返回具体request（例如批量delete），在事务完成时resolve
+                        if (!resolved) {
+                            resolved = true;
+                            resolve();
+                        }
+                    };
+                    
+                    transaction.onerror = function(event) {
+                        console.error('事务错误:', event.target.error);
+                        if (!resolved) {
+                            resolved = true;
+                            reject(event.target.error);
+                        }
+                    };
+                } catch (e) {
+                    reject(e);
+                }
             });
         }
 
@@ -735,44 +887,19 @@
         // 更新一级分类
         function updateMainCategory(id, name) {
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction('mainCategories', 'readwrite');
-                const store = transaction.objectStore('mainCategories');
-                
-                // 先获取分类
-                const getRequest = store.get(id);
-                
-                getRequest.onsuccess = function(event) {
-                    const category = event.target.result;
-                    if (!category) {
-                        reject(new Error('分类不存在'));
-                        return;
-                    }
-                    
-                    // 更新分类
+                const tx = db.transaction('mainCategories', 'readwrite');
+                const store = tx.objectStore('mainCategories');
+                const getReq = store.get(id);
+                getReq.onsuccess = () => {
+                    const category = getReq.result;
+                    if (!category) { resolve(); return; }
                     category.name = name;
-                    
-                    // 保存更新
-                    const putRequest = store.put(category);
-                    
-                    putRequest.onsuccess = function(event) {
-                        resolve(event.target.result);
-                    };
-                    
-                    putRequest.onerror = function(event) {
-                        console.error('更新分类失败:', event.target.error);
-                        reject(event.target.error);
-                    };
+                    const putReq = store.put(category);
+                    putReq.onsuccess = (e) => resolve(e.target.result);
+                    putReq.onerror = (e) => reject(e.target.error);
                 };
-                
-                getRequest.onerror = function(event) {
-                    console.error('获取分类失败:', event.target.error);
-                    reject(event.target.error);
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error('事务错误:', event.target.error);
-                    reject(event.target.error);
-                };
+                getReq.onerror = (e) => reject(e.target.error);
+                tx.onerror = (e) => reject(e.target.error);
             });
         }
 
@@ -815,45 +942,20 @@
         // 更新二级分类
         function updateSubCategory(id, mainId, name) {
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction('subCategories', 'readwrite');
-                const store = transaction.objectStore('subCategories');
-                
-                // 先获取分类
-                const getRequest = store.get(id);
-                
-                getRequest.onsuccess = function(event) {
-                    const category = event.target.result;
-                    if (!category) {
-                        reject(new Error('分类不存在'));
-                        return;
-                    }
-                    
-                    // 更新分类
+                const tx = db.transaction('subCategories', 'readwrite');
+                const store = tx.objectStore('subCategories');
+                const getReq = store.get(id);
+                getReq.onsuccess = () => {
+                    const category = getReq.result;
+                    if (!category) { resolve(); return; }
                     category.mainId = mainId;
                     category.name = name;
-                    
-                    // 保存更新
-                    const putRequest = store.put(category);
-                    
-                    putRequest.onsuccess = function(event) {
-                        resolve(event.target.result);
-                    };
-                    
-                    putRequest.onerror = function(event) {
-                        console.error('更新分类失败:', event.target.error);
-                        reject(event.target.error);
-                    };
+                    const putReq = store.put(category);
+                    putReq.onsuccess = (e) => resolve(e.target.result);
+                    putReq.onerror = (e) => reject(e.target.error);
                 };
-                
-                getRequest.onerror = function(event) {
-                    console.error('获取分类失败:', event.target.error);
-                    reject(event.target.error);
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error('事务错误:', event.target.error);
-                    reject(event.target.error);
-                };
+                getReq.onerror = (e) => reject(e.target.error);
+                tx.onerror = (e) => reject(e.target.error);
             });
         }
 
@@ -889,11 +991,20 @@
         function getQuestionsByCategory(mainCategoryIds, subCategoryIds) {
             return getAllQuestions().then(questions => {
                 let filtered = questions;
-                if (mainCategoryIds && mainCategoryIds.length > 0) {
-                    filtered = filtered.filter(q => mainCategoryIds.includes(q.mainCategoryId));
+
+                // 兼容传入单个数值
+                const mainIds = Array.isArray(mainCategoryIds)
+                    ? mainCategoryIds
+                    : (typeof mainCategoryIds === 'number' ? [mainCategoryIds] : []);
+                const subIds = Array.isArray(subCategoryIds)
+                    ? subCategoryIds
+                    : (typeof subCategoryIds === 'number' ? [subCategoryIds] : []);
+
+                if (mainIds.length > 0) {
+                    filtered = filtered.filter(q => mainIds.includes(q.mainCategoryId));
                 }
-                if (subCategoryIds && subCategoryIds.length > 0) {
-                    filtered = filtered.filter(q => subCategoryIds.includes(q.subCategoryId));
+                if (subIds.length > 0) {
+                    filtered = filtered.filter(q => subIds.includes(q.subCategoryId));
                 }
                 return filtered;
             });
@@ -916,49 +1027,24 @@
         // 更新题目
         function updateQuestion(id, question) {
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction('questions', 'readwrite');
-                const store = transaction.objectStore('questions');
-                
-                // 先获取题目
-                const getRequest = store.get(id);
-                
-                getRequest.onsuccess = function(event) {
-                    const q = event.target.result;
-                    if (!q) {
-                        reject(new Error('题目不存在'));
-                        return;
-                    }
-                    
-                    // 更新题目
+                const tx = db.transaction('questions', 'readwrite');
+                const store = tx.objectStore('questions');
+                const getReq = store.get(id);
+                getReq.onsuccess = () => {
+                    const q = getReq.result;
+                    if (!q) { resolve(); return; }
                     q.content = question.content;
                     q.options = question.options;
                     q.correctOption = question.correctOption;
                     q.mainCategoryId = question.mainCategoryId;
                     q.subCategoryId = question.subCategoryId;
                     q.updatedAt = new Date().toISOString();
-                    
-                    // 保存更新
-                    const putRequest = store.put(q);
-                    
-                    putRequest.onsuccess = function(event) {
-                        resolve(event.target.result);
-                    };
-                    
-                    putRequest.onerror = function(event) {
-                        console.error('更新题目失败:', event.target.error);
-                        reject(event.target.error);
-                    };
+                    const putReq = store.put(q);
+                    putReq.onsuccess = (e) => resolve(e.target.result);
+                    putReq.onerror = (e) => reject(e.target.error);
                 };
-                
-                getRequest.onerror = function(event) {
-                    console.error('获取题目失败:', event.target.error);
-                    reject(event.target.error);
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error('事务错误:', event.target.error);
-                    reject(event.target.error);
-                };
+                getReq.onerror = (e) => reject(e.target.error);
+                tx.onerror = (e) => reject(e.target.error);
             });
         }
 
@@ -975,71 +1061,6 @@
                     });
                 })
             ]);
-        }
-
-        // 用户凭证管理
-        // 保存用户凭证到数据库
-        function saveUserCredentials(username, passwordHash) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction('userCredentials', 'readwrite');
-                const store = transaction.objectStore('userCredentials');
-                
-                // 先清空现有凭证
-                const clearRequest = store.clear();
-                
-                clearRequest.onsuccess = function() {
-                    // 保存新凭证
-                    const addRequest = store.add({
-                        username,
-                        passwordHash,
-                        createdAt: new Date().toISOString()
-                    });
-                    
-                    addRequest.onsuccess = function(event) {
-                        resolve(event.target.result);
-                    };
-                    
-                    addRequest.onerror = function(event) {
-                        console.error('保存用户凭证失败:', event.target.error);
-                        reject(event.target.error);
-                    };
-                };
-                
-                clearRequest.onerror = function(event) {
-                    console.error('清空用户凭证失败:', event.target.error);
-                    reject(event.target.error);
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error('事务错误:', event.target.error);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // 获取用户凭证
-        function getUserCredentials() {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction('userCredentials', 'readonly');
-                const store = transaction.objectStore('userCredentials');
-                
-                const getAllRequest = store.getAll();
-                
-                getAllRequest.onsuccess = function(event) {
-                    const credentials = event.target.result;
-                    resolve(credentials.length > 0 ? credentials[0] : null);
-                };
-                
-                getAllRequest.onerror = function(event) {
-                    console.error('获取用户凭证失败:', event.target.error);
-                    reject(event.target.error);
-                };
-                
-                transaction.onerror = function(event) {
-                    console.error('事务错误:', event.target.error);
-                    reject(event.target.error);
-                };
-            });
         }
 
         // 错题管理
@@ -1102,6 +1123,123 @@
         }
 
         // 数据导入导出
+        // 错误答案库相关
+        function getAllWrongPoolItems() {
+            return dbOperation('wrongAnswerPool', 'readonly', (store) => store.getAll());
+        }
+
+        function clearWrongAnswerPool() {
+            return dbOperation('wrongAnswerPool', 'readwrite', (store) => store.clear());
+        }
+
+        // 归一化（去重用）
+        function normalizeText(s) {
+            if (s == null) return '';
+            let t = String(s).trim();
+            // 将连续空白折叠为单个空格
+            t = t.replace(/\s+/g, ' ');
+            // 英文大小写不敏感
+            t = t.toLowerCase();
+            return t;
+        }
+
+        // 按分类导入到错误答案库，带去重
+        function importWrongAnswersToPool(items, mainCategoryId = null, subCategoryId = null) {
+            return getAllWrongPoolItems().then(existing => {
+                const existingSet = new Set(existing.map(it => `${normalizeText(it.text)}|${it.mainCategoryId||''}|${it.subCategoryId||''}`));
+                const toAdd = [];
+                items.forEach(text => {
+                    const trimmed = String(text).trim();
+                    if (!trimmed) return;
+                    const key = `${normalizeText(trimmed)}|${mainCategoryId||''}|${subCategoryId||''}`;
+                    if (!existingSet.has(key)) {
+                        toAdd.push({ text: trimmed, normalized: normalizeText(trimmed), mainCategoryId: mainCategoryId||null, subCategoryId: subCategoryId||null, createdAt: new Date().toISOString() });
+                        existingSet.add(key);
+                    }
+                });
+                return new Promise((resolve, reject) => {
+                    if (toAdd.length === 0) return resolve({ added: 0 });
+                    const tx = db.transaction(['wrongAnswerPool'], 'readwrite');
+                    const store = tx.objectStore('wrongAnswerPool');
+                    toAdd.forEach(obj => store.add(obj));
+                    tx.oncomplete = () => resolve({ added: toAdd.length });
+                    tx.onerror = (e) => reject(e.target.error);
+                });
+            });
+        }
+
+        // 导出错误答案库（支持按分类范围）
+        function exportWrongPool(scope = {}) {
+            return getAllWrongPoolItems().then(items => {
+                const { mainCategoryId = null, subCategoryId = null } = scope;
+                const filtered = items.filter(it => {
+                    if (mainCategoryId && it.mainCategoryId !== mainCategoryId) return false;
+                    if (subCategoryId && it.subCategoryId !== subCategoryId) return false;
+                    return true;
+                });
+                return filtered;
+            });
+        }
+
+        // 从错误答案库采样（按范围优先）
+        function sampleWrongAnswersFromPoolScoped(allItems, correct, count, mainCategoryId = null, subCategoryId = null) {
+            const correctNorm = normalizeText(correct);
+            const used = new Set();
+            const res = [];
+
+            function pickFrom(list) {
+                // 打乱
+                const arr = [...list];
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                for (const it of arr) {
+                    const text = String(it.text ?? it).trim();
+                    const norm = normalizeText(text);
+                    if (!text) continue;
+                    if (norm === correctNorm) continue;
+                    if (used.has(norm)) continue;
+                    res.push(text);
+                    used.add(norm);
+                    if (res.length >= count) break;
+                }
+            }
+
+            // 1) 同 main+sub
+            if (subCategoryId) {
+                pickFrom(allItems.filter(it => it.mainCategoryId === mainCategoryId && it.subCategoryId === subCategoryId));
+            }
+            // 2) 同 main
+            if (res.length < count && mainCategoryId) {
+                pickFrom(allItems.filter(it => it.mainCategoryId === mainCategoryId && !it.subCategoryId));
+                pickFrom(allItems.filter(it => it.mainCategoryId === mainCategoryId && it.subCategoryId && it.subCategoryId !== subCategoryId));
+            }
+            // 3) 全局（无分类）
+            if (res.length < count) {
+                pickFrom(allItems.filter(it => !it.mainCategoryId && !it.subCategoryId));
+            }
+            // 4) 其他分类
+            if (res.length < count) {
+                pickFrom(allItems.filter(it => it.mainCategoryId && (!mainCategoryId || it.mainCategoryId !== mainCategoryId)));
+            }
+            return res.slice(0, count);
+        }
+
+        function updateWrongAnswerPoolCount(scope = {}) {
+            const countEl = document.getElementById('wrong-pool-count');
+            if (!countEl) return;
+            const { mainCategoryId = null, subCategoryId = null } = scope;
+            getAllWrongPoolItems().then(items => {
+                const filtered = items.filter(it => {
+                    if (mainCategoryId && it.mainCategoryId !== mainCategoryId) return false;
+                    if (subCategoryId && it.subCategoryId !== subCategoryId) return false;
+                    return true;
+                });
+                countEl.textContent = filtered.length;
+            });
+        }
+
         // 导出所有数据
         function exportAllData() {
             return Promise.all([
@@ -1110,14 +1248,15 @@
                 getAllQuestions(),
                 getAllWrongQuestions()
             ]).then(([mainCategories, subCategories, questions, wrongQuestions]) => {
-                return {
+                return getAllWrongPoolItems().then(wrongAnswerPool => ({
                     version: dbVersion,
                     exportTime: new Date().toISOString(),
                     mainCategories,
                     subCategories,
                     questions,
-                    wrongQuestions
-                };
+                    wrongQuestions,
+                    wrongAnswerPool
+                }));
             });
         }
 
@@ -1125,7 +1264,7 @@
         function importAllData(data) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction(
-                    ['mainCategories', 'subCategories', 'questions', 'wrongQuestions'],
+                    ['mainCategories', 'subCategories', 'questions', 'wrongQuestions', 'wrongAnswerPool'],
                     'readwrite'
                 );
                 
@@ -1134,6 +1273,7 @@
                 transaction.objectStore('subCategories').clear();
                 transaction.objectStore('questions').clear();
                 transaction.objectStore('wrongQuestions').clear();
+                transaction.objectStore('wrongAnswerPool').clear();
                 
                 // 导入新数据
                 if (data.mainCategories && Array.isArray(data.mainCategories)) {
@@ -1156,6 +1296,11 @@
                     data.wrongQuestions.forEach(question => wrongStore.add(question));
                 }
                 
+                if (data.wrongAnswerPool && Array.isArray(data.wrongAnswerPool)) {
+                    const wapStore = transaction.objectStore('wrongAnswerPool');
+                    data.wrongAnswerPool.forEach(item => wapStore.add(item));
+                }
+                
                 transaction.oncomplete = () => resolve();
                 transaction.onerror = (event) => reject(event.target.error);
             });
@@ -1175,15 +1320,12 @@
                 .then(() => dbOperation('subCategories', 'readwrite', (store) => store.clear()))
                 .then(() => dbOperation('questions', 'readwrite', (store) => store.clear()))
                 .then(() => dbOperation('wrongQuestions', 'readwrite', (store) => store.clear()))
-                .then(() => dbOperation('quizRecords', 'readwrite', (store) => store.clear()));
+                .then(() => dbOperation('quizRecords', 'readwrite', (store) => store.clear()))
+                .then(() => dbOperation('wrongAnswerPool', 'readwrite', (store) => store.clear()));
         }
 
         // 页面导航
         function navigateTo(pageId) {
-            if (!isLoggedIn) {
-                return;
-            }
-            
             // 隐藏所有页面
             document.querySelectorAll('.page-content').forEach(page => {
                 page.classList.add('hidden');
@@ -1202,13 +1344,17 @@
             if (pageId === 'categories') {
                 renderCategories();
             } else if (pageId === 'questions') {
-                renderQuestions();
+                renderQuestions(); // 不传参数，会显示提示信息
                 populateCategorySelectors();
             } else if (pageId === 'wrong-questions') {
                 renderWrongQuestions();
                 populateWrongQuestionCategoryFilters();
             } else if (pageId === 'home') {
                 updateHomeStats();
+            } else if (pageId === 'data-management') {
+                // 进入数据管理页面时，初始化数据管理相关UI
+                populateTextImportCategorySelectors();
+                updateWrongAnswerPoolCount();
             }
         }
 
@@ -1498,35 +1644,155 @@
 
         // 更新二级分类选择器
         function updateSubCategorySelector(mainId, subSelector) {
-            return new Promise((resolve, reject) => {
-                if (!subSelector) {
-                    resolve();
-                    return;
-                }
-                
-                // 移除所有现有事件监听器，防止重复绑定
-                const newSubSelector = subSelector.cloneNode(true);
-                subSelector.parentNode.replaceChild(newSubSelector, subSelector);
-                
-                // 清空现有选项
-                newSubSelector.innerHTML = '<option value="">-- 请选择二级分类 --</option>';
-                
-                if (mainId) {
-                    getSubCategoriesByMainId(parseInt(mainId)).then(subCategories => {
-                        subCategories.forEach(category => {
-                            const option = document.createElement('option');
-                            option.value = category.id;
-                            option.textContent = category.name;
-                            newSubSelector.appendChild(option);
-                        });
-                        resolve(newSubSelector);
-                    }).catch(error => {
-                        reject(error);
+            if (!subSelector) return Promise.resolve();
+            
+            // 移除所有现有事件监听器，防止重复绑定
+            const newSubSelector = subSelector.cloneNode(true);
+            subSelector.parentNode.replaceChild(newSubSelector, subSelector);
+            
+            // 清空现有选项
+            newSubSelector.innerHTML = '<option value="">-- 请选择二级分类 --</option>';
+            
+            if (mainId) {
+                return getSubCategoriesByMainId(parseInt(mainId)).then(subCategories => {
+                    subCategories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        newSubSelector.appendChild(option);
                     });
-                } else {
-                    resolve(newSubSelector);
-                }
+                });
+            }
+            return Promise.resolve();
+        }
+
+        // 文本导入：填充分类选择器
+        function populateTextImportCategorySelectors() {
+            let mainSelector = document.getElementById('text-import-main');
+            let subSelector = document.getElementById('text-import-sub');
+            if (!mainSelector || !subSelector) return;
+
+            // 通过克隆方式移除既有事件监听
+            const newMain = mainSelector.cloneNode(true);
+            const newSub = subSelector.cloneNode(true);
+            mainSelector.parentNode.replaceChild(newMain, mainSelector);
+            subSelector.parentNode.replaceChild(newSub, subSelector);
+            mainSelector = newMain;
+            subSelector = newSub;
+
+            // 初始化选项
+            mainSelector.innerHTML = '<option value="">-- 请选择一级分类 --</option>';
+            subSelector.innerHTML = '<option value="">-- 请先选择一级分类 --</option>';
+
+            // 填充一级分类
+            getAllMainCategories().then(mainCategories => {
+                mainCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    mainSelector.appendChild(option);
+                });
             });
+
+            // 绑定change事件，更新二级分类
+            mainSelector.addEventListener('change', function() {
+                updateSubCategorySelector(this.value, subSelector);
+            });
+        }
+
+        // 生成四个不同的错误答案
+        function generateWrongAnswers(answer) {
+            const wrongs = new Set();
+            const ans = String(answer).trim();
+
+            // 工具：打乱数组
+            function shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            // 数值（包含整数/小数）
+            const num = Number(ans);
+            const isNumeric = ans !== '' && !isNaN(num) && isFinite(num);
+            const yearReg = /^(?:1[8-9]\d{2}|20\d{2}|21\d{2})$/; // 1800-2199
+            const dateLike = /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}/.test(ans);
+            const yesSet = new Set(['是','对','正确','true','True','TRUE','yes','Yes','YES','y','Y']);
+            const noSet = new Set(['否','不对','错误','false','False','FALSE','no','No','NO','n','N']);
+
+            // 布尔类
+            if (yesSet.has(ans)) {
+                ['否','不对','错误','False','NO','N'].forEach(v => wrongs.add(v));
+            } else if (noSet.has(ans)) {
+                ['是','对','正确','True','YES','Y'].forEach(v => wrongs.add(v));
+            }
+
+            // 年份
+            if (wrongs.size < 4 && yearReg.test(ans)) {
+                const y = parseInt(ans, 10);
+                [y - 1, y + 1, y - 2, y + 2, y - 10, y + 10].forEach(v => wrongs.add(String(v)));
+            }
+
+            // 日期
+            if (wrongs.size < 4 && dateLike) {
+                const d = new Date(ans.replace(/\./g,'/').replace(/-/g,'/'));
+                if (!isNaN(d.getTime())) {
+                    const base = d.getTime();
+                    const day = 24 * 60 * 60 * 1000;
+                    [base - day, base + day, base - 2 * day, base + 2 * day, base + 7 * day].forEach(ts => {
+                        const nd = new Date(ts);
+                        const yyyy = nd.getFullYear();
+                        const mm = String(nd.getMonth() + 1).padStart(2, '0');
+                        const dd = String(nd.getDate()).padStart(2, '0');
+                        wrongs.add(`${yyyy}-${mm}-${dd}`);
+                    });
+                }
+            }
+
+            // 数值近邻
+            if (wrongs.size < 4 && isNumeric) {
+                const offsets = shuffle([1, -1, 2, -2, 3, -3]);
+                const decimals = (ans.split('.')[1] || '').length;
+                for (const off of offsets) {
+                    let v = num + off;
+                    if (decimals > 0) v = Number(v.toFixed(decimals));
+                    wrongs.add(String(v));
+                    if (wrongs.size >= 4) break;
+                }
+            }
+
+            // 通用干扰项与基于答案的变体
+            if (wrongs.size < 4) {
+                const basePool = ['无法判断','其他','以上都不是','不确定','未知','与题意无关'];
+                const variants = [];
+                if (ans.length >= 4) {
+                    const half = Math.max(2, Math.floor(ans.length / 2));
+                    variants.push(ans.slice(0, half));
+                    variants.push('非' + ans);
+                    variants.push(ans + '（相关）');
+                    variants.push(ans + '（相近概念）');
+                } else {
+                    variants.push('非' + ans);
+                    variants.push(ans + '（错误）');
+                }
+                [...variants, ...basePool].forEach(v => {
+                    if (String(v).trim() !== ans) wrongs.add(String(v));
+                });
+            }
+
+            // 过滤掉与正确答案完全相同的项，并裁剪到4个
+            const result = Array.from(wrongs).filter(v => v !== ans).slice(0, 4);
+
+            // 兜底：如果不足4个，填充通用项
+            const fillPool = ['A选项','B选项','C选项','D选项','E选项','备选项'];
+            let i = 0;
+            while (result.length < 4 && i < fillPool.length) {
+                if (fillPool[i] !== ans && !result.includes(fillPool[i])) result.push(fillPool[i]);
+                i++;
+            }
+            return result.slice(0, 4);
         }
 
         // 渲染分类列表
@@ -1670,7 +1936,22 @@
             let mainCategoryId = filters.mainCategoryId;
             let subCategoryId = filters.subCategoryId;
             
-            getQuestionsByCategory(mainCategoryId, subCategoryId).then(questions => {
+            // 如果没有选择一级或二级分类，显示提示信息
+            if (!mainCategoryId && !subCategoryId) {
+                questionsList.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-gray-500">
+                            <i class="fa fa-info-circle mr-2"></i>请选择一级或二级分类来查看题目列表
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            getQuestionsByCategory(
+                mainCategoryId ? [mainCategoryId] : null,
+                subCategoryId ? [subCategoryId] : null
+            ).then(questions => {
                 if (questions.length === 0) {
                     questionsList.innerHTML = `
                         <tr>
@@ -1942,7 +2223,7 @@
             });
             
             // 提交表单
-            function handleFormSubmit(e) {
+            form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
                 const id = document.getElementById('question-id').value;
@@ -1985,15 +2266,19 @@
                     // 添加新题目
                     addQuestion(question).then(() => {
                         closeModal();
-                        renderQuestions();
+                        // 添加后保持当前筛选状态
+                        const mainFilterId = document.getElementById('filter-main-category').value;
+                        const subFilterId = document.getElementById('filter-sub-category').value;
+                        
+                        renderQuestions({
+                            mainCategoryId: mainFilterId ? parseInt(mainFilterId) : null,
+                            subCategoryId: subFilterId ? parseInt(subFilterId) : null
+                        });
                         updateHomeStats();
                         populateCategorySelectors(); // 刷新分类选择器
                     });
                 }
-            }
-            
-            // 绑定表单提交事件
-            form.addEventListener('submit', handleFormSubmit);
+            });
         }
 
         // 更新正确答案选择器
@@ -2045,10 +2330,8 @@
                 updateSubCategorySelector(
                     question.mainCategoryId,
                     document.getElementById('question-sub-category')
-                ).then((newSubSelector) => {
-                    if (newSubSelector) {
-                        newSubSelector.value = question.subCategoryId;
-                    }
+                ).then(() => {
+                    document.getElementById('question-sub-category').value = question.subCategoryId;
                 });
                 
                 // 显示模态框
@@ -2530,16 +2813,158 @@
             });
             
             // 提供一个公开方法，用于从外部启动答题（如错题重答）
-            window.startQuizFromQuestions = function(questions, isWrongQuiz) {
-                if (!isLoggedIn) {
-                    return;
-                }
-                startQuiz(questions, isWrongQuiz);
-            };
+            window.startQuizFromQuestions = startQuiz;
         }
 
         // 初始化数据管理功能
         function initDataManagement() {
+            // 进入数据管理时，初始化文本导入选择器
+            populateTextImportCategorySelectors();
+            updateWrongAnswerPoolCount();
+
+            // 错误答案库：分类选择器
+            populateWrongPoolCategorySelectors();
+
+            // 错误答案库：导入（按所选分类，带去重）
+            const wrongPoolImportBtn = document.getElementById('wrong-pool-import-btn');
+            if (wrongPoolImportBtn) {
+                wrongPoolImportBtn.addEventListener('click', () => {
+                    const text = (document.getElementById('wrong-pool-input').value || '').trim();
+                    if (!text) {
+                        alert('请输入要导入的错误答案，每行一条');
+                        return;
+                    }
+                    const mainVal = document.getElementById('wrong-pool-main').value;
+                    const subVal = document.getElementById('wrong-pool-sub').value;
+                    const mainCategoryId = mainVal ? parseInt(mainVal) : null;
+                    const subCategoryId = subVal ? parseInt(subVal) : null;
+
+                    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                    importWrongAnswersToPool(lines, mainCategoryId, subCategoryId).then(({ added }) => {
+                        alert(`导入完成：新增 ${added} 条（已去重）`);
+                        document.getElementById('wrong-pool-input').value = '';
+                        updateWrongAnswerPoolCount({ mainCategoryId, subCategoryId });
+                    }).catch(err => {
+                        console.error('错误答案库导入失败:', err);
+                        alert('错误答案库导入失败');
+                    });
+                });
+            }
+
+            // 错误答案库：清空当前范围
+            const wrongPoolClearScopeBtn = document.getElementById('wrong-pool-clear-scope-btn');
+            if (wrongPoolClearScopeBtn) {
+                wrongPoolClearScopeBtn.addEventListener('click', () => {
+                    const mainVal = document.getElementById('wrong-pool-main').value;
+                    const subVal = document.getElementById('wrong-pool-sub').value;
+                    const mainCategoryId = mainVal ? parseInt(mainVal) : null;
+                    const subCategoryId = subVal ? parseInt(subVal) : null;
+
+                    showConfirmDialog(
+                        '确认清空',
+                        '确定要清空当前选择范围内的错误答案吗？',
+                        () => {
+                            getAllWrongPoolItems().then(items => {
+                                const toDelete = items.filter(it => {
+                                    if (mainCategoryId && it.mainCategoryId !== mainCategoryId) return false;
+                                    if (subCategoryId && it.subCategoryId !== subCategoryId) return false;
+                                    return true;
+                                }).map(it => it.id);
+                                const tx = db.transaction(['wrongAnswerPool'], 'readwrite');
+                                const store = tx.objectStore('wrongAnswerPool');
+                                toDelete.forEach(id => store.delete(id));
+                                tx.oncomplete = () => {
+                                    alert('已清空当前范围');
+                                    updateWrongAnswerPoolCount({ mainCategoryId, subCategoryId });
+                                };
+                            });
+                        }
+                    );
+                });
+            }
+
+            // 错误答案库：清空全部
+            const wrongPoolClearAllBtn = document.getElementById('wrong-pool-clear-all-btn');
+            if (wrongPoolClearAllBtn) {
+                wrongPoolClearAllBtn.addEventListener('click', () => {
+                    showConfirmDialog(
+                        '确认清空',
+                        '确定要清空全部错误答案库吗？',
+                        () => {
+                            clearWrongAnswerPool().then(() => {
+                                alert('错误答案库已清空');
+                                updateWrongAnswerPoolCount();
+                            });
+                        }
+                    );
+                });
+            }
+
+            // 错误答案库：导出当前范围JSON
+            const wrongPoolExportBtn = document.getElementById('wrong-pool-export-btn');
+            if (wrongPoolExportBtn) {
+                wrongPoolExportBtn.addEventListener('click', () => {
+                    const mainVal = document.getElementById('wrong-pool-main').value;
+                    const subVal = document.getElementById('wrong-pool-sub').value;
+                    const mainCategoryId = mainVal ? parseInt(mainVal) : null;
+                    const subCategoryId = subVal ? parseInt(subVal) : null;
+                    exportWrongPool({ mainCategoryId, subCategoryId }).then(items => {
+                        const json = JSON.stringify({ wrongAnswerPool: items }, null, 2);
+                        const blob = new Blob([json], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        const scope = `${mainCategoryId||'all'}-${subCategoryId||'all'}`;
+                        a.download = `wrong-answer-pool-${scope}-${new Date().toISOString().slice(0,10)}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                });
+            }
+
+            // 错误答案库：导入JSON
+            const wrongPoolImportJsonBtn = document.getElementById('wrong-pool-import-json-btn');
+            const wrongPoolImportFile = document.getElementById('wrong-pool-import-file');
+            if (wrongPoolImportJsonBtn && wrongPoolImportFile) {
+                wrongPoolImportJsonBtn.addEventListener('click', () => wrongPoolImportFile.click());
+                wrongPoolImportFile.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            const arr = Array.isArray(data) ? data : (data.wrongAnswerPool || []);
+                            if (!Array.isArray(arr)) throw new Error('JSON格式不正确');
+                            // 按分类分组导入并去重
+                            const groups = new Map(); // key: main|sub -> [texts]
+                            arr.forEach(it => {
+                                if (!it || !it.text) return;
+                                const mainId = it.mainCategoryId ?? null;
+                                const subId = it.subCategoryId ?? null;
+                                const key = `${mainId||''}|${subId||''}`;
+                                if (!groups.has(key)) groups.set(key, { mainId, subId, texts: [] });
+                                groups.get(key).texts.push(String(it.text));
+                            });
+                            const jobs = [];
+                            groups.forEach(({ mainId, subId, texts }) => {
+                                jobs.push(importWrongAnswersToPool(texts, mainId, subId));
+                            });
+                            Promise.all(jobs).then(() => {
+                                alert('错误答案库JSON导入完成');
+                                updateWrongAnswerPoolCount();
+                            });
+                        } catch (err) {
+                            console.error('导入错误答案库JSON失败:', err);
+                            alert('导入失败：' + err.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+
             // 导出数据
             document.getElementById('export-data-btn').addEventListener('click', () => {
                 exportAllData().then(data => {
@@ -2598,6 +3023,129 @@
                 );
             });
             
+            // 快速导入JSON文件
+            const quickImportBtn = document.getElementById('quick-import-json-btn');
+            const quickImportFileInput = document.getElementById('quick-import-file-input');
+            
+            if (quickImportBtn) {
+                quickImportBtn.addEventListener('click', () => {
+                    // 直接打开文件选择对话框
+                    quickImportFileInput.click();
+                });
+                
+                quickImportFileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    // 检查是否为JSON文件
+                    if (!file.name.endsWith('.json')) {
+                        alert('请选择JSON文件');
+                        return;
+                    }
+                    
+                    // 读取并导入JSON文件
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        try {
+                            const jsonData = JSON.parse(event.target.result);
+                            
+                            showConfirmDialog(
+                                '确认导入',
+                                `导入文件 "${file.name}" 将覆盖现有所有数据，确定要继续吗？`,
+                                () => {
+                                    importAllData(jsonData).then(() => {
+                                        alert(`文件 "${file.name}" 导入成功`);
+                                        // 刷新所有页面数据
+                                        navigateTo('home');
+                                        renderCategories();
+                                        renderQuestions();
+                                        renderWrongQuestions();
+                                        populateCategorySelectors();
+                                        updateHomeStats();
+                                    }).catch(error => {
+                                        console.error('导入失败:', error);
+                                        alert('数据导入失败: ' + error.message);
+                                    });
+                                }
+                            );
+                        } catch (error) {
+                            console.error('解析JSON失败:', error);
+                            alert('文件格式错误，无法解析JSON数据');
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+            
+            // 文本导入：解析并导入（先预览后确认）
+            const textImportBtn = document.getElementById('text-import-btn');
+            if (textImportBtn) {
+                textImportBtn.addEventListener('click', () => {
+                    const mainVal = document.getElementById('text-import-main').value;
+                    const subVal = document.getElementById('text-import-sub').value;
+                    const text = (document.getElementById('text-import-input').value || '').trim();
+
+                    if (!mainVal) {
+                        alert('请选择一级分类');
+                        return;
+                    }
+                    if (!subVal) {
+                        alert('请选择二级分类');
+                        return;
+                    }
+                    if (!text) {
+                        alert('请粘贴/输入要导入的文本');
+                        return;
+                    }
+
+                    const mainCategoryId = parseInt(mainVal);
+                    const subCategoryId = parseInt(subVal);
+
+                    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                    if (lines.length === 0) {
+                        alert('没有可解析的内容');
+                        return;
+                    }
+
+                    // 先获取错误答案库
+                    getAllWrongPoolItems().then(poolItems => {
+                        const previewItems = [];
+                        lines.forEach(line => {
+                            const idx = line.indexOf('----');
+                            if (idx === -1) return; // 忽略格式不正确
+                            const q = line.slice(0, idx).trim();
+                            const a = line.slice(idx + 4).trim();
+                            if (!q || !a) return;
+
+                            // 按分类优先从池采样
+                            let wrongs = sampleWrongAnswersFromPoolScoped(poolItems, a, 4, mainCategoryId, subCategoryId);
+                            if (wrongs.length < 4) {
+                                const algos = generateWrongAnswers(a);
+                                const setW = new Set(wrongs.map(normalizeText));
+                                for (const w of algos) {
+                                    if (normalizeText(w) !== normalizeText(a) && !setW.has(normalizeText(w))) {
+                                        wrongs.push(w);
+                                        setW.add(normalizeText(w));
+                                    }
+                                    if (wrongs.length >= 4) break;
+                                }
+                            }
+                            // 构造初始options，默认将正确答案放首位，稍后预览时可编辑/再随机
+                            const options = [a, ...wrongs].slice(0, 5);
+                            previewItems.push({ content: q, answer: a, options });
+                        });
+
+                        if (previewItems.length === 0) {
+                            alert('未找到符合“问题----答案”格式的行');
+                            return;
+                        }
+
+                        // 打开预览弹窗
+                        openTextImportPreview(previewItems, { mainCategoryId, subCategoryId });
+                    });
+                });
+            }
+
             // 清空题目
             document.getElementById('clear-questions-btn').addEventListener('click', () => {
                 showConfirmDialog(
@@ -2632,6 +3180,173 @@
                     }
                 );
             });
+        }
+
+        // 错误答案库：填充分类选择器与事件
+        function populateWrongPoolCategorySelectors() {
+            const mainSelector = document.getElementById('wrong-pool-main');
+            const subSelector = document.getElementById('wrong-pool-sub');
+            if (!mainSelector || !subSelector) return;
+
+            // 重置
+            mainSelector.innerHTML = '<option value="">全部/全局</option>';
+            subSelector.innerHTML = '<option value="">全部</option>';
+
+            getAllMainCategories().then(mainCategories => {
+                mainCategories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    mainSelector.appendChild(opt);
+                });
+            });
+
+            mainSelector.addEventListener('change', function() {
+                const mainId = this.value ? parseInt(this.value) : null;
+                // 更新子分类
+                subSelector.innerHTML = '<option value="">全部</option>';
+                if (mainId) {
+                    getSubCategoriesByMainId(mainId).then(subs => {
+                        subs.forEach(sc => {
+                            const opt = document.createElement('option');
+                            opt.value = sc.id;
+                            opt.textContent = sc.name;
+                            subSelector.appendChild(opt);
+                        });
+                    });
+                }
+                updateWrongAnswerPoolCount({ mainCategoryId: mainId, subCategoryId: null });
+            });
+
+            subSelector.addEventListener('change', function() {
+                const mainId = mainSelector.value ? parseInt(mainSelector.value) : null;
+                const subId = this.value ? parseInt(this.value) : null;
+                updateWrongAnswerPoolCount({ mainCategoryId: mainId, subCategoryId: subId });
+            });
+        }
+
+        // 文本导入预览：构建并展示
+        function openTextImportPreview(previewItems, context) {
+            const modal = document.getElementById('text-import-preview-modal');
+            const list = document.getElementById('text-import-preview-list');
+            const closeBtn = document.getElementById('close-text-import-preview');
+            const randomizeBtn = document.getElementById('text-import-preview-randomize');
+            const confirmBtn = document.getElementById('confirm-text-import-btn');
+
+            list.innerHTML = '';
+            // 渲染每条题目
+            previewItems.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'border border-gray-200 rounded-lg p-4';
+                const optsHtml = item.options.map((opt, i) => {
+                    const id = `ti-opt-${idx}-${i}`;
+                    const checked = i === 0 ? 'checked' : '';
+                    return `
+                        <div class="flex items-center mb-2">
+                            <input type="radio" name="ti-correct-${idx}" id="${id}" class="mr-2" ${checked}>
+                            <input type="text" class="ti-option-input w-full p-2 border border-gray-300 rounded-md" data-qindex="${idx}" data-oindex="${i}" value="${opt}">
+                        </div>
+                    `;
+                }).join('');
+                card.innerHTML = `
+                    <div class="mb-2">
+                        <label class="block text-gray-700 text-sm mb-1">题目 ${idx + 1}</label>
+                        <input type="text" class="ti-question-input w-full p-2 border border-gray-300 rounded-md" data-qindex="${idx}" value="${item.content}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="block text-gray-700 text-sm mb-1">选项（请确保只有一个为正确答案）</label>
+                        ${optsHtml}
+                    </div>
+                    <div class="text-xs text-gray-500">默认第一项为正确答案，可修改选项或勾选正确答案。</div>
+                `;
+                list.appendChild(card);
+            });
+
+            function shuffleOptionsInPreview() {
+                const cards = list.children;
+                for (let c = 0; c < cards.length; c++) {
+                    const inputs = cards[c].querySelectorAll('.ti-option-input');
+                    const values = Array.from(inputs).map(inp => inp.value);
+                    // 简单打乱
+                    for (let i = values.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [values[i], values[j]] = [values[j], values[i]];
+                    }
+                    values.forEach((v, i) => { inputs[i].value = v; });
+                    // 重置正确选择为第一项
+                    const radios = cards[c].querySelectorAll(`input[type="radio"][name="ti-correct-${c}"]`);
+                    radios.forEach((r, i) => r.checked = (i === 0));
+                }
+            }
+
+            randomizeBtn.onclick = shuffleOptionsInPreview;
+
+            function close() {
+                modal.classList.add('hidden');
+            }
+            closeBtn.onclick = close;
+
+            confirmBtn.onclick = function() {
+                // 读取编辑后的数据并校验
+                const cards = list.children;
+                const toImport = [];
+                for (let c = 0; c < cards.length; c++) {
+                    const qInput = cards[c].querySelector('.ti-question-input');
+                    const optInputs = cards[c].querySelectorAll('.ti-option-input');
+                    const radios = cards[c].querySelectorAll(`input[type="radio"][name="ti-correct-${c}"]`);
+                    const content = (qInput.value || '').trim();
+                    const options = Array.from(optInputs).map(inp => (inp.value || '').trim()).filter(v => v);
+                    if (!content || options.length < 2) continue;
+                    let correctIndex = 0;
+                    radios.forEach((r, i) => { if (r.checked) correctIndex = i; });
+                    const correctValue = options[correctIndex];
+                    // 去除与正确答案相同的其他选项
+                    const normCorrect = normalizeText(correctValue);
+                    const dedupOptions = [];
+                    const seen = new Set();
+                    options.forEach((op, i) => {
+                        const norm = normalizeText(op);
+                        if (i !== correctIndex && norm === normCorrect) return;
+                        if (!seen.has(norm)) { dedupOptions.push(op); seen.add(norm); }
+                    });
+                    // 重新定位正确索引
+                    const newCorrectIndex = dedupOptions.findIndex(v => normalizeText(v) === normCorrect);
+                    if (newCorrectIndex === -1) {
+                        // 如果被清理掉，则跳过该题
+                        return;
+                    }
+                    toImport.push({ content, options: dedupOptions.slice(0, 5), correctOption: newCorrectIndex });
+                }
+                if (toImport.length === 0) {
+                    alert('没有可导入的有效题目，请检查内容');
+                    return;
+                }
+
+                // 写入DB
+                const { mainCategoryId, subCategoryId } = context;
+                const tasks = toImport.map(q => {
+                    return addQuestion({
+                        content: q.content,
+                        options: q.options,
+                        correctOption: q.correctOption,
+                        mainCategoryId,
+                        subCategoryId
+                    });
+                });
+                Promise.all(tasks).then(() => {
+                    alert(`导入完成：成功导入 ${toImport.length} 条题目`);
+                    document.getElementById('text-import-input').value = '';
+                    // 导入后显示对应分类的题目
+                    renderQuestions({
+                        mainCategoryId: mainCategoryId,
+                        subCategoryId: subCategoryId
+                    });
+                    updateHomeStats();
+                    close();
+                });
+            };
+
+            modal.classList.remove('hidden');
         }
 
         // 初始化错题本功能
@@ -2764,6 +3479,71 @@
                         }
                     );
                 }
+            });
+        }
+
+        // 用户凭证管理
+        // 保存用户凭证到数据库
+        function saveUserCredentials(username, passwordHash) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction('userCredentials', 'readwrite');
+                const store = transaction.objectStore('userCredentials');
+                
+                // 先清空现有凭证
+                const clearRequest = store.clear();
+                
+                clearRequest.onsuccess = function() {
+                    // 保存新凭证
+                    const addRequest = store.add({
+                        username,
+                        passwordHash,
+                        createdAt: new Date().toISOString()
+                    });
+                    
+                    addRequest.onsuccess = function(event) {
+                        resolve(event.target.result);
+                    };
+                    
+                    addRequest.onerror = function(event) {
+                        console.error('保存用户凭证失败:', event.target.error);
+                        reject(event.target.error);
+                    };
+                };
+                
+                clearRequest.onerror = function(event) {
+                    console.error('清空用户凭证失败:', event.target.error);
+                    reject(event.target.error);
+                };
+                
+                transaction.onerror = function(event) {
+                    console.error('事务错误:', event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // 获取用户凭证
+        function getUserCredentials() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction('userCredentials', 'readonly');
+                const store = transaction.objectStore('userCredentials');
+                
+                const getAllRequest = store.getAll();
+                
+                getAllRequest.onsuccess = function(event) {
+                    const credentials = event.target.result;
+                    resolve(credentials.length > 0 ? credentials[0] : null);
+                };
+                
+                getAllRequest.onerror = function(event) {
+                    console.error('获取用户凭证失败:', event.target.error);
+                    reject(event.target.error);
+                };
+                
+                transaction.onerror = function(event) {
+                    console.error('事务错误:', event.target.error);
+                    reject(event.target.error);
+                };
             });
         }
 
